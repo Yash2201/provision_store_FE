@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Store, ArrowLeft, Package, Tags, BarChart3, Users } from "lucide-react";
+import { Store, ArrowLeft, Package, Tags, BarChart3, Users, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ConfirmDeleteDialog from "@/components/ui/ConfirmDeleteDialog";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,12 @@ const Admin = () => {
   const [deleteType, setDeleteType] = useState<"product" | "category" | "sale" | null>(null);
   
   const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/auth');
+  };
   
   // Custom hooks
   const {
@@ -150,9 +156,15 @@ const Admin = () => {
               <h1 className="font-bold hidden sm:block">Admin Dashboard</h1>
             </div>
           </div>
-          <Link to="/">
-            <Button variant="outline" size="sm">View Store</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/">
+              <Button variant="outline" size="sm">View Store</Button>
+            </Link>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-1" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
