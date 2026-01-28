@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#22c55e"/>
+  <g fill="white">
+    <circle cx="256" cy="180" r="75"/>
+    <ellipse cx="256" cy="340" rx="120" ry="95"/>
+    <path d="M256 90 L256 50 Q256 30 276 40 L310 60" stroke="white" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <circle cx="310" cy="60" r="16" fill="#22c55e" stroke="white" stroke-width="5"/>
+  </g>
+  <text x="256" y="470" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="42" font-weight="bold">FreshMart</text>
+</svg>
