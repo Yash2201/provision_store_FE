@@ -1,46 +1,77 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Store, Mail, Lock, User, ArrowLeft, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
   const { toast } = useToast();
+  const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      fetch(`${API}/api/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: formData.email, password: formData.password })
-      }).then(async (r) => {
-        if (!r.ok) throw new Error('Invalid credentials');
-        const data = await r.json();
+    setError("");
+    setIsLoading(true);
+    
+    try {
+      if (isLogin) {
+        const response = await fetch(`${API}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email, password: formData.password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          setError(data.message || 'Login failed. Please check your credentials.');
+          return;
+        }
+        
         toast({ title: 'Login Successful!', description: `Welcome back, ${data.user.name || 'User'}!` });
         localStorage.setItem('token', data.token);
-        window.location.href = '/admin';
-      }).catch(() => {
-        toast({ title: 'Login Failed', description: 'Invalid email or password.', variant: 'destructive' });
-      });
-    } else {
-      fetch(`${API}/api/auth/register`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: formData.name, email: formData.email, password: formData.password })
-      }).then(async (r) => {
-        if (!r.ok) throw new Error('Register failed');
+        
+        // Redirect based on user role
+        if (data.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      } else {
+        const response = await fetch(`${API}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: formData.name, email: formData.email, password: formData.password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          setError(data.message || 'Registration failed. Please try again.');
+          return;
+        }
+        
         toast({ title: 'Registration Successful!', description: 'Your account has been created. Please login.' });
         setIsLogin(true);
-      }).catch(() => {
-        toast({ title: 'Registration Failed', description: 'Unable to register.', variant: 'destructive' });
-      });
+        setFormData({ name: "", email: "", password: "" });
+      }
+    } catch (err) {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,6 +111,12 @@ const Auth = () => {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               {!isLogin && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
@@ -108,11 +145,12 @@ const Auth = () => {
                     id="email"
                     type="email"
                     placeholder="admin@freshmart.com"
-                    className="pl-10"
+                    className={`pl-10 ${error ? 'border-red-500 focus:border-red-500' : ''}`}
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (error) setError("");
+                    }}
                     required
                   />
                 </div>
@@ -126,11 +164,12 @@ const Auth = () => {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 pr-10"
+                    className={`pl-10 pr-10 ${error ? 'border-red-500 focus:border-red-500' : ''}`}
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      if (error) setError("");
+                    }}
                     required
                   />
                   <button
@@ -147,8 +186,15 @@ const Auth = () => {
                 </div>
               </div>
 
-              <Button type="submit" variant="hero" className="w-full" size="lg">
-                {isLogin ? "Login" : "Create Account"}
+              <Button type="submit" variant="hero" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                    {isLogin ? "Logging in..." : "Creating Account..."}
+                  </div>
+                ) : (
+                  isLogin ? "Login" : "Create Account"
+                )}
               </Button>
             </form>
 
@@ -156,7 +202,12 @@ const Auth = () => {
               <p className="text-sm text-muted-foreground">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
                 <button
-                  onClick={() => setIsLogin(!isLogin)}
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError("");
+                    setFormData({ name: "", email: "", password: "" });
+                  }}
                   className="text-primary font-semibold hover:underline"
                 >
                   {isLogin ? "Register" : "Login"}

@@ -7,19 +7,42 @@ import { cn } from "@/lib/utils";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   // 🔐 login status check
   useEffect(() => {
     const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const isExpired = payload.exp * 1000 < Date.now();
+        
+        if (isExpired) {
+          localStorage.removeItem('token');
+          setIsLoggedIn(false);
+          setUserInfo(null);
+        } else {
+          setIsLoggedIn(true);
+          setUserInfo({ role: payload.role, id: payload.id });
+        }
+      } catch (error) {
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+        setUserInfo(null);
+      }
+    } else {
+      setIsLoggedIn(false);
+      setUserInfo(null);
+    }
   }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
-    navigate("/auth");
+    setUserInfo(null);
+    navigate("/");
   };
 
   const navLinks = [
@@ -82,22 +105,29 @@ const Navbar = () => {
                 </Button>
               </Link>
             ) : (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="gap-2"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </Button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {userInfo?.role === 'admin' ? 'Admin' : 'Customer'}!
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </Button>
+              </div>
             )}
 
-            <Link to="/admin">
-              <Button variant="default" size="sm">
-                Admin Panel
-              </Button>
-            </Link>
+            {userInfo?.role === 'admin' && (
+              <Link to="/admin">
+                <Button variant="default" size="sm">
+                  Admin Panel
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
