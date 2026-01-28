@@ -1,7 +1,7 @@
 import * as Yup from "yup";
 
 export const productSchema = Yup.object().shape({
-  name: Yup.string().trim().required("Product name is required").min(1, "Name cannot be empty"),
+  name: Yup.string().trim().required("Product name is required").min(3, "Product name must be at least 3 characters"),
   description: Yup.string().trim().required("Description is required").min(1, "Description cannot be empty"),
   price: Yup.number()
     .typeError("Price must be a valid number")
@@ -33,6 +33,11 @@ export const getBorderClass = (fieldName: string, value: any, formErrors: { [key
   // Number validation
   if (fieldName === "price" && value !== "" && Number(value) < 1) return "border-destructive border-2";
   if (fieldName === "stock" && value !== "" && Number(value) < 0) return "border-destructive border-2";
+  
+  // Product name minimum 3 characters validation
+  if (fieldName === "name" && value !== "" && value.trim().length < 3) {
+    return "border-destructive border-2";
+  }
   
   // String trim validation (Name, Description, BatchNo)
   if ((fieldName === "name" || fieldName === "description" || fieldName === "batchNo") && value !== "" && value.trim() === "") {

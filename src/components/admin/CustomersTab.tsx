@@ -217,6 +217,21 @@ export const CustomersTab = ({ salesHistory, onPaymentUpdate, onCustomerUpdate }
       return;
     }
 
+    if (!/^[a-zA-Z\s]+$/.test(editForm.name.trim())) {
+      toast({ title: "Error", description: "Name can only contain letters and spaces", variant: "destructive" });
+      return;
+    }
+
+    if (editForm.phone && editForm.phone.length > 10) {
+      toast({ title: "Error", description: "Phone number cannot exceed 10 digits", variant: "destructive" });
+      return;
+    }
+
+    if (editForm.phone && !/^[0-9]*$/.test(editForm.phone)) {
+      toast({ title: "Error", description: "Phone number can only contain digits", variant: "destructive" });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await onCustomerUpdate(selectedCustomerData.name, editForm);
@@ -476,11 +491,29 @@ export const CustomersTab = ({ salesHistory, onPaymentUpdate, onCustomerUpdate }
           <DialogHeader><DialogTitle>Edit Customer</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Name *</Label>
+              <Label>Name * (Letters only)</Label>
               <Input 
                 value={editForm.name} 
-                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^[a-zA-Z\s]*$/.test(value)) {
+                    setEditForm(prev => ({ ...prev, name: value }));
+                  }
+                }}
+                onKeyDown={(e) => {
+                  const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', ' '];
+                  if (!/[a-zA-Z]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pastedText = e.clipboardData.getData('text');
+                  const sanitized = pastedText.replace(/[^a-zA-Z\s]/g, '');
+                  setEditForm(prev => ({ ...prev, name: sanitized }));
+                }}
                 placeholder="Customer name"
+                className={editForm.name && !/^[a-zA-Z\s]*$/.test(editForm.name) ? "border-destructive border-2" : ""}
               />
             </div>
             <div className="space-y-2">
@@ -492,12 +525,34 @@ export const CustomersTab = ({ salesHistory, onPaymentUpdate, onCustomerUpdate }
               />
             </div>
             <div className="space-y-2">
-              <Label>Contact Number</Label>
+              <Label>Contact Number (Max 10 digits, numbers only)</Label>
               <Input 
                 value={editForm.phone} 
-                onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 10 && /^[0-9]*$/.test(value)) {
+                    setEditForm(prev => ({ ...prev, phone: value }));
+                  }
+                }}
+                onKeyDown={(e) => {
+                  const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'];
+                  if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pastedText = e.clipboardData.getData('text');
+                  const sanitized = pastedText.replace(/[^0-9]/g, '').substring(0, 10);
+                  setEditForm(prev => ({ ...prev, phone: sanitized }));
+                }}
                 placeholder="Phone number (optional)"
+                maxLength={10}
+                className={editForm.phone.length > 10 || (editForm.phone && !/^[0-9]*$/.test(editForm.phone)) ? "border-destructive border-2" : ""}
               />
+              <div className="text-xs text-muted-foreground">
+                {editForm.phone.length}/10 digits
+              </div>
             </div>
             <div className="flex gap-3">
               <Button 
