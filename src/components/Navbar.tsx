@@ -162,14 +162,23 @@ const Navbar = () => {
                   </Button>
                 </Link>
               ) : (
-                <Button
-                  className="w-full gap-2"
-                  variant="destructive"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </Button>
+                <>
+                  {userInfo?.role === 'admin' && (
+                    <Link to="/admin">
+                      <Button className="w-full mb-2" variant="default">
+                        Admin Panel
+                      </Button>
+                    </Link>
+                  )}
+                  <Button
+                    className="w-full gap-2"
+                    variant="destructive"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </Button>
+                </>
               )}
             </div>
           </div>
